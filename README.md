@@ -18,7 +18,7 @@ Robotics and embedded-systems projects, 2020–2026: international competition r
 
 ---
 
-## 🔬 Flagship: [Arduino Photogate — Measuring g and Diagnosing Systematic Timing Error (2026)](photogate-free-fall/)
+##  Flagship: [Arduino Photogate — Measuring g and Diagnosing Systematic Timing Error (2026)](photogate-free-fall/)
 
 **Fully solo project** (IB Physics Internal Assessment): designed, built, coded, and analyzed over ~3 months of near-daily lab sessions.
 
@@ -32,11 +32,11 @@ A servo-release + LDR photogate free-fall rig, timed by an Arduino at microsecon
 
 **What I would change:** log the servo's actual release moment via a limit switch to separate mechanical delay from LDR detection lag; replace the shared start signal with a break-beam at the release point, removing the offset at its source.
 
-📄 Raw data, source code, results summary, and follow-up analysis in the [`photogate-free-fall`](photogate-free-fall/) folder. (Full report to be added after IB submission.)
+ Raw data, source code, results summary, and follow-up analysis in the [`photogate-free-fall`](photogate-free-fall/) folder. (Full report to be added after IB submission.)
 
 ---
 
-## 🚁 [ESP32 Hovercraft — UPM Madrid Summer Camp (2026)](esp32-hovercraft-upm/)
+##  [ESP32 Hovercraft — UPM Madrid Summer Camp (2026)](esp32-hovercraft-upm/)
 
 Phone-controlled hovercraft: the ESP32 broadcasts its own Wi-Fi access point and serves a control page — thrust slider drives a brushless motor through an ESC (0–180 mapped to 1000–2000 µs pulses); steering drives a rudder servo (software-limited 45°–135°).
 
@@ -44,7 +44,7 @@ Phone-controlled hovercraft: the ESP32 broadcasts its own Wi-Fi access point and
 
 ---
 
-## 🔥 [Flame Guardian (2023)](2023-flame%20guardian/)
+##  [Flame Guardian (2023)](2023-flame%20guardian/)
 
 Wildfire detection and alert system: camera-based fire detection triggering automatic email alerts with location data, designed for remote assessment and response via a web interface.
 
@@ -56,7 +56,7 @@ Wildfire detection and alert system: camera-based fire detection triggering auto
 
 ---
 
-## 🏆 Competition Robots (2020–2023)
+##  Competition Robots (2020–2023)
 
 ### [Korea RoboSTEAM 2021 — Autonomous Patient Transfer Robot (1st place)](2021%20Korea%20Champion%20-%20Autonomous%20Patient%20Transfer%20Robot/)
 Line-following robot that locates colored blocks (representing patients) and delivers each to its matching zone.
@@ -72,7 +72,7 @@ A robot that moves a plant toward optimal light, then waters it automatically.
 
 ---
 
-## 🤖 [Humanoid Hand (2024, incomplete)](humanoid-hand/)
+##  [Humanoid Hand (2024, incomplete)](humanoid-hand/)
 
 Guided self-taught build of a sensor-mimicking humanoid hand from an online tutorial. Left incomplete when I moved to Spain — archived honestly as such.
 
