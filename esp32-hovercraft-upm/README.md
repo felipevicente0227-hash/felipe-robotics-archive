@@ -2,6 +2,8 @@
 
 A wi-fi controlled hovercraft built around an ESP32. The board broadcasts its own wi-fi access point and serves a control webpage — any phone that joins the network gets two sliders: one for thrust, one for steering. No app, no RC receiver, no pairing. The hovercraft is the network.
 
+Origin & attribution: Built at ETSII UPM's summer camp under instructor guidance (camp reference repo). The Wi-Fi/web framework came as an instructor starter template; I completed the ESC and servo integration and led my team's physical design, assembly, calibration, and flight tuning. Our team's own CAD variants stayed on camp laptops — the .f3d files archived here are the camp's reference designs.
+
 Built July 2026. Videos: hoverboard1.mp4, hoverboard2.mp4.
 
 ## How it works
@@ -30,7 +32,7 @@ All parts designed in Fusion 360 and 3D printed (.f3d source files in this repo)
 - redirigir_aire.f3d — air-redirect duct
 - soporterbrushless.f3d — brushless motor mount
 - tubo.f3d — thrust tube
-- timonV2.f3d — rudder, version 2 (v1 taught me what didn't work)
+- timonV2.f3d — rudder (the camp's second-revision reference design)
 
 ## Setup
 
@@ -59,7 +61,7 @@ Everything in the **verifiable** list is read directly from `ESP_hovercraft.ino`
 - **Not yet tested with two phones connected at once.** Nothing in the code arbitrates between clients, so the last request received wins and either phone's heartbeat keeps the failsafe from tripping for both.
 - Control range is bounded by the ESP32's own access point, since the board makes the network rather than joining one.
 
-**Not yet measured — the hardware exists and all of this is testable:**
+**Not yet measured — the hardware remained at the UPM camp in Madrid and is no longer accessible, so these would require a rebuild:**
 
 - Control range from the board — not yet measured
 - Run time on a full battery, and the battery specification — not yet measured
@@ -67,4 +69,4 @@ Everything in the **verifiable** list is read directly from `ESP_hovercraft.ino`
 - Thrust value at which it lifts off the surface — not yet measured
 - Failsafe behaviour in a real walk-away test, as opposed to on the bench — not yet recorded
 
-Endurance beyond short demonstration runs has not been characterised, and the two-client case noted above is still untested.
+Endurance beyond short demonstration runs was never characterised, and the two-client case noted above was never tested; with the hardware left behind at the camp, closing either gap would mean rebuilding the unit.

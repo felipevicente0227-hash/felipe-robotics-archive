@@ -1,6 +1,6 @@
 # 2021 Korea Champion — Autonomous Patient Transfer Robot
 
-Line-tracing autonomous robot that transports a patient figure between stations on a marked course. Built for the Korea RoboSTEAM competition, 2021.
+Line-tracing autonomous robot that locates colored blocks (representing patients) and delivers each to its matching colored zone on a marked course. Built for the Korea RoboSTEAM competition, 2021.
 
 ## Files
 

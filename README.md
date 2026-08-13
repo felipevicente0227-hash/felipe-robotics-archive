@@ -10,7 +10,7 @@ Robotics and embedded-systems projects, 2020–2026: international competition r
 |------|---------|----------------------|------------------|
 | 2026 | Arduino Photogate — g measurement | Experimental design, systematic error analysis, embedded timing | Raw data (45 trials), source code, results summary, follow-up analysis, video |
 | 2026 | ESP32 Hovercraft (UPM Madrid) | Embedded networking, ESC/servo integration, assembly | Code, CAD, videos, camp reference repo |
-| 2024 | Humanoid Hand (incomplete) | Servo control, guided ML build | Photos, video |
+| 2023–24 | Humanoid Hand (incomplete) | Servo control, guided ML build | Photos, video |
 | 2023 | Flame Guardian | Camera-based detection, IoT alerting | Detection model, alert code, demo video (YouTube) |
 | 2023 | URC Australia — Mechanical Crank (1st place) | Mechanical design, threshold tuning | Design files, photos |
 | 2021 | Korea RoboSTEAM — Patient Transfer (1st place) | Line-tracing algorithms, route strategy | Design files, videos, photos |
@@ -72,7 +72,7 @@ A robot that moves a plant toward optimal light, then waters it automatically.
 
 ---
 
-##  [Humanoid Hand (2024, incomplete)](humanoid-hand/)
+##  [Humanoid Hand (2023–2024, incomplete)](humanoid-hand/)
 
 Guided self-taught build of a sensor-mimicking humanoid hand from an online tutorial. Left incomplete when I moved to Spain — archived honestly as such.
 

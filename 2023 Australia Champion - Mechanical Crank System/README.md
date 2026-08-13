@@ -2,11 +2,13 @@
 
 Mechanical crank system built for the URC competition, Australia, 2023.
 
+The competition took place in September 2023. The later materials in this folder — program revisions dated November 2023, December photographs, and the URC-AUS-2024 revision — are post-competition development toward the following URC season.
+
 ## Files
 
 - `2023- australia/` — four block-editor programs (`.bpd`). These are binary files from a block-based programming environment and cannot be read as text; the specific editor they belong can be downloaded from'https://www.artec-kk.co.jp/studuino/en/studuino.php'
   
-  - `URC20231113.bpd`, `URC20231126.bpd`, `URC-AUS-2024.bpd` — dated revisions (13 Nov, 26 Nov, and a later 2024 revision)
+  - `URC20231113.bpd`, `URC20231126.bpd`, `URC-AUS-2024.bpd` — post-competition revisions, all dated after the September 2023 event (13 Nov 2023, 26 Nov 2023, and a later 2024 revision); none of them is the version run at the competition
   - `備品機_URC澳洲.bpd` — a separate variant; what distinguishes it from the others was not recorded
 - 5 build photographs (September and December 2023)
 
@@ -16,4 +18,4 @@ Mechanical crank system built for the URC competition, Australia, 2023.
 
 The controller platform and actuators, the mechanical function of the crank itself, the competition task it performed and its result, and its known failure modes were not recorded, and cannot be recovered from the binary program files or the photographs. Load, torque, range of travel and cycle time were never measured; the system was built to complete a competition task rather than to a specification, and the hardware no longer exists to measure them now.
 
-The three dated revisions (13 Nov 2023 → 26 Nov 2023 → 2024) show the design was iterated across and after the competition; what specifically changed between them is not recorded.
+The three dated revisions (13 Nov 2023 → 26 Nov 2023 → 2024) show the design was iterated after the September 2023 competition; what specifically changed between them is not recorded.
