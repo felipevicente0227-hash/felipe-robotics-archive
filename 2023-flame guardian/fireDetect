@@ -1,0 +1,64 @@
+# Flame Guardian - camera detection node
+#
+# Runs on a laptop and watches a webcam for flame using a Haar cascade,
+# sounding an alarm when it sees one. This is the visual half of the project;
+# FireDefenderMailSending.py is the standalone board that sends the email.
+#
+# Haar cascades were chosen over a colour-threshold approach because plain
+# "look for orange pixels" fires on anything orange in frame - a jacket, a
+# desk lamp - while the cascade keys on flame shape and texture as well.
+#
+# No .py extension: kept as the original competition filename.
+
+import cv2
+import pygame
+import os
+import time
+#from playsound import playsound
+
+
+# Pre-trained flame classifier, loaded from the XML in this folder. The path is
+# relative, so this must be run from inside the project directory.
+fire_cascade = cv2.CascadeClassifier('fire_detection.xml')
+pygame.mixer.init()
+# Audible alarm - the point of the system is to warn someone who is not
+# looking at the screen. audio.wav sits alongside this file and is loaded
+# by relative path, so run this script from inside the project folder.
+fire_sound = pygame.mixer.Sound("audio.wav")
+
+
+# 0 = default system webcam.
+cap = cv2.VideoCapture(0)
+
+while(True):
+    ret, frame = cap.read()
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    # 1.2 = image pyramid scale step. Smaller than the usual 1.3 so the
+    # detector steps through sizes more finely and catches small/distant
+    # flames, at the cost of a slower scan per frame.
+    # 5 = minimum neighbouring detections needed to accept a hit. This is the
+    # false-alarm dial: raising it suppresses one-frame flickers on reflective
+    # surfaces, lowering it makes the detector jumpier.
+    fire = fire_cascade.detectMultiScale(frame, 1.2, 5)
+
+    for (x,y,w,h) in fire:
+        # 20 px of padding around the box so the outline does not sit on top of
+        # the flame itself and hide what was actually detected.
+        cv2.rectangle(frame,(x-20,y-20),(x+w+20,y+h+20),(255,0,0),2)
+        roi_gray = gray[y:y+h, x:x+w]
+        roi_color = frame[y:y+h, x:x+w]
+        print("fire is detected")
+        # Hold the alarm for one second, then cut it, so repeated detections
+        # produce distinct beeps instead of one continuous overlapping tone.
+        # This blocks the capture loop while it plays - see the limitations
+        # section in this project's README.
+        fire_sound.play()
+        time.sleep(1)
+        fire_sound.stop()
+
+    cv2.imshow('frame', frame)
+    # waitKey(1) both paces the loop and reads the keyboard; the 0xFF mask
+    # keeps the comparison correct on 64-bit builds where waitKey returns
+    # extra high bits. 'q' quits.
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
