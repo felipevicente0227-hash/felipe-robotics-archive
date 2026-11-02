@@ -79,6 +79,9 @@ def main():
     df["neuropil"] = df.neuropil.fillna("UNASGD")
     base = df.neuropil.str.replace(r"_(L|R)$", "", regex=True)
     df["region"] = base.map(REGION_OF).fillna("Unassigned")
+    # photoreceptors etc. whose synapses lie outside annotated neuropils -> optic lobe
+    vis = (df.region == "Unassigned") & (df.cell_class == "visual")
+    df.loc[vis, "region"] = "Optic lobe"
 
     coords = pd.read_csv(RAW / "codex_coordinates.csv.gz").drop_duplicates("root_id")
     xyz = np.stack(coords.position.str.strip("[]").str.split().apply(

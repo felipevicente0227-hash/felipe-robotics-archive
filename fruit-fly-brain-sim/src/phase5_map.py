@@ -31,6 +31,8 @@ def load():
     n = pd.read_parquet(IN)
     n["act"] = np.log10(1 + n.rate_hz)            # colour scale: log10(1 + Hz)
     n["cell_type"] = n.cell_type.replace("unknown", "(untyped)")
+    # same rule as prepare_data.py: unassigned visual neurons (photoreceptors) -> optic lobe
+    n.loc[(n.region == "Unassigned") & (n.cell_class == "visual"), "region"] = "Optic lobe"
     order = n.region.value_counts().index.tolist()
     if "Unassigned" in order:                       # keep 'Unassigned' last
         order.remove("Unassigned")
@@ -50,7 +52,7 @@ def grid_layout(n, order):
         cols[sub.index] = k % GRID_W
         nrows = int(np.ceil(len(sub) / GRID_W))
         labels.append((reg, r0, nrows, len(sub)))
-        r0 += nrows + 2                              # 2 empty rows between regions
+        r0 += max(nrows, 9) + 3                      # min block height so labels fit
     return rows, cols, labels, r0
 
 
@@ -80,7 +82,7 @@ def png_grid(n, rows, cols, labels, H, path, vmax):
     im = ax.imshow(img, cmap=cm, vmin=0, vmax=vmax, aspect="auto", interpolation="nearest")
     for reg, r0, nr, cnt in labels:
         act = (n.region == reg) & (n.rate_hz > 0)
-        ax.text(-8, r0 + nr / 2, f"{reg}\n{cnt:,} neurons, {act.sum():,} active",
+        ax.text(-8, r0 + max(nr, 9) / 2, f"{reg}: {cnt:,} neurons, {act.sum():,} active",
                 ha="right", va="center", fontsize=8)
     ax.set_xticks([]); ax.set_yticks([])
     for s in ax.spines.values():
@@ -114,67 +116,91 @@ def treemap_df(n):
 
 
 def html_map(n, rows, cols, labels, H, tm, path, vmax):
-    hover = (n.cell_type.astype(str) + " · " + n.cell_class.astype(str) + "<br>" + n.region.astype(str)
-             + " · " + n.side.astype(str) + " · " + n.nt_type.astype(str) + "<br>"
-             + n.rate_hz.round(1).astype(str) + " Hz · id " + n.root_id.astype(str))
-    s = n.assign(h=hover).sort_values("act")
+    """One compact lookup table (JSON) for all neurons; plots carry only neuron indices
+    and a small JS tooltip reads the details, keeping the file small."""
+    import json
+    cats = {c: pd.Categorical(n[c].astype(str)) for c in
+            ["cell_type", "cell_class", "region", "side", "nt_type"]}
+    table = {c: {"names": list(v.categories), "codes": v.codes.tolist()} for c, v in cats.items()}
+    table["rate"] = n.rate_hz.round(2).tolist()
+    table["id"] = n.root_id.astype(str).tolist()
     cbar = dict(title="log10(1+Hz)")
+    s = n.sort_values("act")
     f1 = go.Figure(go.Scattergl(
-        x=s.x, y=-s.y, mode="markers", text=s.h, hoverinfo="text",
-        marker=dict(size=2, color=s.act, colorscale=CMAP.capitalize(), cmin=0, cmax=vmax,
-                    colorbar=cbar)))
-    f1.update_layout(title="Anatomy: every neuron at its position (front view). Hover for details; "
-                           "drag to zoom.", template="plotly_dark", height=700,
+        x=s.x.round(1).to_numpy(), y=(-s.y).round(1).to_numpy(), mode="markers",
+        customdata=s.index.to_numpy(np.int32), hoverinfo="none",
+        marker=dict(size=2, color=s.act.round(3).to_numpy(), colorscale=CMAP.capitalize(),
+                    cmin=0, cmax=vmax, colorbar=cbar)))
+    f1.update_layout(title="1 · Anatomy: every neuron at its real position (front view). "
+                           "Hover for details; drag to zoom.", template="plotly_dark", height=700,
                      yaxis=dict(scaleanchor="x", visible=False), xaxis=dict(visible=False))
-
-    z = np.full((H, GRID_W), np.nan)
-    z[rows, cols] = n.act.to_numpy()
-    txt = np.full((H, GRID_W), "", dtype=object)
-    txt[rows, cols] = hover.to_numpy()
-    f2 = go.Figure(go.Heatmap(z=z, text=txt, hoverinfo="text", colorscale=CMAP.capitalize(),
+    z = np.full((H, GRID_W), np.nan, np.float32)
+    z[rows, cols] = n.act.round(3).to_numpy()
+    ix = np.full((H, GRID_W), -1, np.int32)
+    ix[rows, cols] = n.index.to_numpy()
+    f2 = go.Figure(go.Heatmap(z=z, customdata=ix, hoverinfo="none", colorscale=CMAP.capitalize(),
                               zmin=0, zmax=vmax, colorbar=cbar, hoverongaps=False))
     for reg, r0, nr, cnt in labels:
         f2.add_annotation(x=-5, y=r0 + nr / 2, text=f"{reg} ({cnt:,})", xanchor="right",
                           showarrow=False, font=dict(size=10))
-    f2.update_layout(title="Grouped grid: one cell per neuron, blocks = brain regions, "
+    f2.update_layout(title="2 · Grouped grid: one cell per neuron, blocks = brain regions, "
                            "sorted by cell class / cell type", height=max(700, 3 * H),
                      yaxis=dict(autorange="reversed", visible=False), xaxis=dict(visible=False),
                      margin=dict(l=230), plot_bgcolor="white")
-
     ids, parents, labs, values, colors, hov = tm
     f3 = go.Figure(go.Treemap(ids=ids, parents=parents, labels=labs, values=values,
                               branchvalues="total", customdata=hov,
                               hovertemplate="<b>%{label}</b><br>%{customdata}<extra></extra>",
                               marker=dict(colors=colors, colorscale=CMAP.capitalize(), cmin=0,
                                           cmax=vmax, colorbar=cbar), maxdepth=2))
-    f3.update_layout(title="Treemap: region → cell class → cell type (click to zoom). "
+    f3.update_layout(title="3 · Treemap: region → cell class → cell type (click to zoom). "
                            "Size = number of neurons, colour = mean rate", height=800)
-
-    parts = [pio.to_html(f, full_html=False, include_plotlyjs=(k == 0)) for k, f in enumerate([f1, f2, f3])]
+    divs = [pio.to_html(f, full_html=False, include_plotlyjs=(k == 0), div_id=f"fig{k}")
+            for k, f in enumerate([f1, f2, f3])]
     tot, act = len(n), int((n.rate_hz > 0).sum())
     html = f"""<!doctype html><html><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Fly brain neuron map</title>
 <style>body{{font-family:system-ui,sans-serif;margin:0 16px;background:#fafafa;color:#222}}
-h1{{font-size:1.4em}} .note{{max-width:900px;color:#444}}</style></head><body>
+h1{{font-size:1.4em}} .note{{max-width:900px;color:#444}}
+#tip{{position:fixed;pointer-events:none;background:#111d;color:#fff;padding:6px 8px;
+border-radius:4px;font-size:12px;display:none;z-index:10;line-height:1.4}}</style></head><body>
 <h1>Whole fly brain neuron map – FlyWire v783, closed-loop run</h1>
-<p class="note">{tot:,} neurons, {act:,} fired at least once during the
-{n.attrs.get('seconds', 10)} s simulated run. Colour = log10(1 + firing rate in Hz).
-Regions = the neuropil holding most of a neuron's synapses. Three views below.</p>
-{parts[0]}{parts[1]}{parts[2]}</body></html>"""
+<p class="note">{tot:,} neurons; {act:,} fired at least once during the 10 s simulated
+closed-loop run (phase 4). Colour = log10(1 + firing rate in Hz). Region = the neuropil
+holding most of a neuron's synapses. Three views below; hover any neuron for its cell type,
+region, side, neurotransmitter, rate and FlyWire ID.</p>
+<div id="tip"></div>
+{divs[0]}{divs[1]}{divs[2]}
+<script>
+const T = {json.dumps(table, separators=(",", ":"))};
+const tip = document.getElementById("tip");
+const nm = (c, i) => T[c].names[T[c].codes[i]];
+function show(ev) {{
+  const p = ev.points && ev.points[0]; if (!p) return;
+  const i = p.customdata; if (i === undefined || i < 0) {{ tip.style.display = "none"; return; }}
+  tip.innerHTML = `<b>${{nm("cell_type", i)}}</b> · ${{nm("cell_class", i)}}<br>${{nm("region", i)}}`
+    + ` · ${{nm("side", i)}} · ${{nm("nt_type", i)}}<br>${{T.rate[i]}} Hz · id ${{T.id[i]}}`;
+  tip.style.left = (ev.event.clientX + 14) + "px"; tip.style.top = (ev.event.clientY + 14) + "px";
+  tip.style.display = "block";
+}}
+for (const id of ["fig0", "fig1"]) {{
+  const el = document.getElementById(id);
+  el.on("plotly_hover", show); el.on("plotly_unhover", () => tip.style.display = "none");
+}}
+</script></body></html>"""
     path.write_text(html)
 
 
 def png_treemap(html_path, png_path):
-    """Screenshot the treemap from the HTML with the pre-installed Chromium."""
-    from playwright.sync_api import sync_playwright
-    with sync_playwright() as p:
-        b = p.chromium.launch()
-        pg = b.new_page(viewport=dict(width=1400, height=900))
-        pg.goto(html_path.as_uri())
-        pg.wait_for_timeout(4000)
-        pg.locator(".js-plotly-plot").nth(2).screenshot(path=str(png_path))
-        b.close()
+    """Screenshot the treemap with the pre-installed (Node) Playwright + Chromium."""
+    import subprocess
+    js = f"""const {{chromium}} = require('playwright');
+(async () => {{ const b = await chromium.launch();
+  const p = await b.newPage({{viewport: {{width: 1400, height: 900}}}});
+  await p.goto('{html_path.as_uri()}'); await p.waitForTimeout(5000);
+  await p.locator('#fig2').screenshot({{path: '{png_path}'}}); await b.close(); }})();"""
+    subprocess.run(["node", "-e", js], check=True, timeout=180)
 
 
 def main():

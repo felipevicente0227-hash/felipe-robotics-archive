@@ -13,7 +13,7 @@ Built in phases. Each phase is finished, tested and committed before the next.
 | 2 | Brain only, 1 s simulated | done |
 | 3 | Body in arena, senses → brain → legs | done |
 | 4 | Record every spike (parquet) | done |
-| 5 | Neuron map (HTML + PNG) | – |
+| 5 | Neuron map (HTML + PNG) | done |
 | 6 | Video: fly + brain side by side | – |
 
 ---
@@ -28,6 +28,7 @@ bash scripts/setup.sh                 # Phase 1: venv + downloads (~2 min)
 MUJOCO_GL=egl .venv/bin/python src/closed_loop.py --seconds 3 --name demo_heading-10      # Phase 3 (~3 min)
 MUJOCO_GL=egl .venv/bin/python src/closed_loop.py --seconds 1.5 --spawn 3.6 2.6 0 --name taste_test
 MUJOCO_GL=egl .venv/bin/python src/phase4_record.py --seconds 10                         # Phase 4 main run (~7 min)
+.venv/bin/python src/phase5_map.py                                                       # Phase 5 (~15 s)
 ```
 Headless rendering needs EGL: `apt-get install libegl1 libgl1-mesa-dri libosmesa6 ffmpeg`.
 
@@ -40,6 +41,7 @@ src/phase2_brain_only.py  1 s brain-only test + Brian2 comparison
 src/sensors.py          senses -> sensory neuron IDs (smell, taste, vision, touch)
 src/closed_loop.py      arena + body + brain loop + motor decoder
 src/phase4_record.py    main 10 s closed-loop run, saves every spike
+src/phase5_map.py       neuron map (HTML + PNG)
 src/prepare_data.py     merges the tables -> data/work/neurons.parquet + connectome.npz
 data/raw/, data/work/   downloaded / generated data (git-ignored, see "Big files")
 outputs/                small results that ARE committed
@@ -208,6 +210,33 @@ spk[spk.root_id == 720575940660219265].t_ms   # MN9 spike times (ms)
 The script re-reads the file after writing and checks the spike count matches (✅).
 If a future longer run makes the file >80 MB, it is automatically split into
 `spikes_partNN.parquet` files (same columns).
+
+### Phase 5 – Neuron map (2026-11-02)
+
+`outputs/phase5/` – all 138,639 neurons, coloured by log10(1 + firing rate) in the phase 4 run.
+
+| File | What it shows |
+|---|---|
+| `neuron_map.html` (20 MB, open in a browser) | three interactive views; hover any neuron → cell type, class, region, side, neurotransmitter, rate, FlyWire ID |
+| `map_anatomy.png` | every neuron at its real 3D position (front + top view) |
+| `map_grid.png` | one pixel per neuron; blocks = 15 brain regions; inside a block sorted by super class → cell class → cell type |
+| `map_treemap.png` | region → cell class → cell type; box size = number of neurons, colour = mean rate |
+| `region_summary.csv` | neurons / active / mean / max rate per region |
+
+What the map shows for this run: the optic lobes hold most active neurons (9,052 – the
+photoreceptors and their first partners, driven by vision); antennal lobe (mean 5.6 Hz),
+lateral complex (4.4 Hz), lateral horn (3.3 Hz) and inferior neuropils (3.1 Hz) are the
+most active central regions (smell → taste → feeding pathways). The ocellar ganglion is
+silent (ocelli are not simulated).
+
+Notes
+- 2,451 R1-6 + ~600 R7/R8 photoreceptors had no annotated neuropil ("Unassigned"); they are
+  now counted as **Optic lobe** (rule added to `prepare_data.py` and `phase5_map.py`;
+  the `region` column in `outputs/phase4/neurons.parquet` predates this rule).
+- First HTML version was 47 MB (hover text repeated for 139k points × 2 plots). Now one
+  compact lookup table + a small JS tooltip → 20 MB (4.8 MB of it is plotly.js itself).
+- Treemap PNG is a screenshot taken with the pre-installed Chromium via Node Playwright.
+- Checked in headless Chromium: 3 plots render, no JS errors, tooltips show.
 
 ## Big files (never committed)
 - `Connectivity_783.parquet` is 100 MB and `connectome.npz` is 51 MB → both live in the
