@@ -11,7 +11,7 @@ Built in phases. Each phase is finished, tested and committed before the next.
 |---|---|---|
 | 1 | Setup: software + connectome download | done |
 | 2 | Brain only, 1 s simulated | done |
-| 3 | Body in arena, senses → brain → legs | – |
+| 3 | Body in arena, senses → brain → legs | done |
 | 4 | Record every spike (parquet) | – |
 | 5 | Neuron map (HTML + PNG) | – |
 | 6 | Video: fly + brain side by side | – |
@@ -25,7 +25,10 @@ cd fruit-fly-brain-sim
 bash scripts/setup.sh                 # Phase 1: venv + downloads (~2 min)
 .venv/bin/python src/prepare_data.py  # Phase 1: build neuron table + connectome matrix (~20 s)
 .venv/bin/python src/phase2_brain_only.py --trials 5 --brian2   # Phase 2 (~2 min; drop --brian2 for ~15 s)
+MUJOCO_GL=egl .venv/bin/python src/closed_loop.py --seconds 3 --name demo_heading-10      # Phase 3 (~3 min)
+MUJOCO_GL=egl .venv/bin/python src/closed_loop.py --seconds 1.5 --spawn 3.6 2.6 0 --name taste_test
 ```
+Headless rendering needs EGL: `apt-get install libegl1 libgl1-mesa-dri libosmesa6 ffmpeg`.
 
 ## Folder layout
 
@@ -33,6 +36,8 @@ bash scripts/setup.sh                 # Phase 1: venv + downloads (~2 min)
 scripts/setup.sh        install + download (data goes to data/raw/, not committed)
 src/brain.py            fast numba spiking engine (Shiu et al. model, steppable)
 src/phase2_brain_only.py  1 s brain-only test + Brian2 comparison
+src/sensors.py          senses -> sensory neuron IDs (smell, taste, vision, touch)
+src/closed_loop.py      arena + body + brain loop + motor decoder
 src/prepare_data.py     merges the tables -> data/work/neurons.parquet + connectome.npz
 data/raw/, data/work/   downloaded / generated data (git-ignored, see "Big files")
 outputs/                small results that ARE committed
@@ -99,6 +104,79 @@ experiment). One sugar ID from the old v630 list is not in v783 and is skipped.
 - ✅ With no input the whole brain stays silent (0 spikes) – expected: the model has no
   spontaneous activity, so in the closed loop all activity must come from the senses.
 - Results: `outputs/phase2/phase2_log.json`, `outputs/phase2/top30_sugar_100Hz.csv`.
+
+### Phase 3 – Body in a closed arena, closed loop (2026-11-02)
+
+**Arena** (`src/closed_loop.py`): flat floor, four walls at ±12 mm (the fly is ~2.5 mm
+long), one yellow sugar disc (radius 2 mm at x=5, y=3) that also emits a food odor
+(concentration = 1 / (1 + (distance / 6 mm)²)). Body = NeuroMechFly (FlyGym 2.1.1),
+legs position-controlled, adhesion on, MuJoCo step 0.1 ms.
+
+**The loop** (every 5 ms of simulated time): read senses → set sensory neuron rates →
+brain 5 ms (50 × 0.1 ms) → read descending neurons → body 5 ms (50 physics steps).
+
+**Senses → sensory neurons** (`src/sensors.py`)
+
+| Sense | Body measurement | Neurons driven (FlyWire v783) | Rate |
+|---|---|---|---|
+| Smell | odor at the left / right antenna (funiculus) | 207 food-odor ORNs (glomeruli DM1, DM4, DP1m, VA2) of that antenna | 60 Hz × concentration |
+| Taste | mouth (haustellum) over the sugar disc | 20 sugar GRNs (Shiu et al. list) | 100 Hz |
+| Vision | FlyGym compound eyes, 721 ommatidia/eye, every 20 ms | 8,712 photoreceptors (R1-6, R7, R8), each fed by the ommatidium at its eye column | 5 Hz × light + 400 × change in light (max 100 Hz) |
+| Touch | head within 0.6 mm of a wall (side facing it) | head / antenna bristle neurons BM_InOm, BM_Ant, BM_Fr | 50 Hz |
+
+Retinotopy: R7/R8 eye columns come from the Codex `column_assignment` table; R1-6 inherit
+the column of the lamina neuron (L1/L2/L3) they synapse onto most. Columns and
+ommatidia are matched by nearest neighbour after aligning both grids on their long
+axis — left/right eye is exact, orientation inside an eye is approximate.
+
+**Descending neurons → body** (FlyGym's `HybridTurningController` = CPG + leg reflexes,
+playing the role of the ventral nerve cord; it takes a left and a right drive):
+
+| Brain signal | Effect |
+|---|---|
+| mean rate of DNa01, DNa02, DNb05, DNp09 | walking speed (on top of a slow default pace 0.4) |
+| left − right change of DNa01 + DNa02 (they cause ipsilateral turns) | turning |
+| MDN ("moonwalker") | backward walking |
+| MN9 (proboscis / feeding motor neuron) | stop walking and feed |
+
+**Tests**
+- ✅ Taste test (`outputs/phase3/taste_test`): fly placed with mouth on sugar → MN9 fires
+  32–39 Hz → drive goes to 0 → the fly stops and stays on the sugar.
+- ✅ Demo (`outputs/phase3/demo_heading-10`, 3 s): fly starts at (−3, −2) heading −10°,
+  walks up the odor gradient (odor 0.33 → 0.97), mouth reaches the sugar at ~1.0 s,
+  MN9 rises to 35–88 Hz and it stops to feed for the rest of the run.
+- ✅ Walls block the fly (they had to be registered as contact geoms – first try the fly
+  walked straight through them).
+- Speed: **~57 s of computer time per simulated second** (body/physics 70 %, senses 12 %
+  incl. eye rendering, brain only ~6 %).
+
+**What failed / what we changed (important)**
+1. ❌ **Odor runaway.** With the plain Shiu model, *any* odor input (even 5 Hz into 32 ORNs)
+   switched on the same ~10,000 neurons (4,000 Kenyon cells) and the activity kept
+   going after the odor was removed. MN9 was suppressed to ~2 Hz, so the fly could not
+   feed. Cause: antennal-lobe local neurons (lLN1_bc, v2LN30 …) – mostly GABAergic in real
+   flies – have predicted neurotransmitters of ACh/dopamine/serotonin in FlyWire, so 65 %
+   of their synapses were excitatory, turning the smell circuit's brakes into an
+   accelerator. **Fix:** `Brain(fix_al_ln_sign=True)` makes all 429 `ALLN` neurons
+   inhibitory. Result: graded odor responses (1,000–1,500 active neurons), sparse Kenyon
+   cells (4–186), activity fades when the odor stops, MN9 back to 70–82 Hz with sugar.
+   Phase 2 numbers use the unmodified model.
+   (Cutting Kenyon-cell→Kenyon-cell synapses was tried first – it did not help.)
+2. ⚠️ **Steering is weak and biased.** Smell neurons project to both brain sides, so a
+   left/right odor difference barely changes DNa01/DNa02. These neurons are also very
+   asymmetric (left ~80 Hz, right ~4 Hz for symmetric input). The decoder therefore
+   uses changes relative to each side's recent mean (0.5 s adaptation) plus a 0.5 s
+   brain warm-up. There is still a mild left drift. The fly reaches the sugar from the
+   chosen start (heading −10°); from headings 0° and +5° it passes ~3 mm left of the
+   sugar and ends at the north wall (`outputs/phase3/heading0_console.log`).
+   **The start pose was chosen so the path crosses the sugar; this is not robust odor
+   tracking.**
+3. ⚠️ **Vision and touch are wired but have no motor effect.** Photoreceptor input
+   activates ~4,000 optic-lobe neurons but no descending neuron; head-bristle input
+   reaches no MDN/steering neuron. So at a wall the fly keeps pushing instead of
+   turning/backing up. This is how the brain-only model behaves (no visual motion →
+   steering pathway emerges with these LIF parameters); no hand-made reflex was added.
+4. ❌ MuJoCo EGL/OSMesa libraries were missing in the container → installed with apt.
 
 ## Big files (never committed)
 - `Connectivity_783.parquet` is 100 MB and `connectome.npz` is 51 MB → both live in the

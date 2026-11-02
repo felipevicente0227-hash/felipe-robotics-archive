@@ -90,7 +90,13 @@ def _run(n_steps, v, g, ref, buf, slot0, indptr, indices, weights,
 class Brain:
     """Whole-brain LIF network. Times in ms."""
 
-    def __init__(self, params: Params = Params(), seed: int = 0):
+    def __init__(self, params: Params = Params(), seed: int = 0, fix_al_ln_sign: bool = False):
+        """fix_al_ln_sign: make all antennal-lobe local neurons (cell_class 'ALLN')
+        inhibitory. Their FlyWire neurotransmitter *prediction* is often ACh/DA/SER, so
+        the plain Shiu model makes ~65% of their synapses excitatory; in real flies they
+        are mostly GABAergic/glutamatergic. Without this, any odor input triggers a
+        self-sustaining ~10,000-neuron runaway (see README, phase 3). Off by default so
+        the plain model stays an exact Shiu et al. reproduction."""
         self.p = p = params
         self.neurons = pd.read_parquet(WORK / "neurons.parquet")
         self.n = n = len(self.neurons)
@@ -99,6 +105,11 @@ class Brain:
         self.indptr = Wout.indptr.astype(np.int64)
         self.indices = Wout.indices.astype(np.int32)
         self.weights = (Wout.data * p.w_syn).astype(np.float32)
+        if fix_al_ln_sign:
+            ln = np.zeros(n, bool)
+            ln[self.neurons.idx[self.neurons.cell_class == "ALLN"]] = True
+            m = np.repeat(ln, np.diff(self.indptr))
+            self.weights[m] = -np.abs(self.weights[m])
 
         dt = p.dt
         e_m, e_s = np.exp(-dt / p.t_mbr), np.exp(-dt / p.tau)
