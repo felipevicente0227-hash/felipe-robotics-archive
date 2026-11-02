@@ -259,6 +259,12 @@ which renders 1,000 frames in ~45 s.
 
 ---
 
+## Tested conditions & limitations
+
+**Tested on:** Linux cloud container, 4 CPU cores, 15 GB RAM, no GPU, Python 3.13,
+flygym 2.1.1, mujoco 3.16.0, brian2 2.11.0, numba 0.68.1; headless rendering via EGL.
+One 10 s closed-loop run (seed 0), plus short 1.5–4 s test runs.
+
 ## Summary – what this project does and does not show
 
 **Does:** the full FlyWire v783 brain (138,639 neurons, 15 M connections) runs as a

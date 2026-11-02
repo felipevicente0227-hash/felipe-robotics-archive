@@ -76,5 +76,11 @@ A robot that moves a plant toward optimal light, then waters it automatically.
 
 Guided self-taught build of a sensor-mimicking humanoid hand from an online tutorial. Left incomplete when I moved to Spain — archived honestly as such.
 
+##  [Fruit-Fly Brain → Body Closed Loop (2026, simulation)](fruit-fly-brain-sim/)
+
+The whole adult fruit-fly brain (FlyWire v783 connectome, 138,639 spiking neurons) running in a closed loop with a physics-simulated fly body (NeuroMechFly in MuJoCo) inside an arena with a sugar spot. Smell, taste, vision and touch drive the matching sensory neurons; descending neurons steer the legs. The fly walks up the odor gradient, tastes the sugar and stops to feed. Includes every recorded spike, an interactive neuron map and a side-by-side video. Software-only project, built with Claude Code; brain model from Shiu et al. 2024.
+
+---
+
 ## License
 MIT — see [LICENSE](LICENSE).
