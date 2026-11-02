@@ -1,0 +1,27 @@
+{
+  "simulated_s": 10.0,
+  "seed": 0,
+  "loop_ms": 5.0,
+  "brain_dt_ms": 0.1,
+  "physics_dt_ms": 0.1,
+  "n_neurons": 138639,
+  "n_spikes": 1033833,
+  "neurons_that_spiked": 11281,
+  "mean_rate_all_hz": 0.7457014260056695,
+  "wall_s": 400.7,
+  "timing_s": {
+    "total_s": 395.1,
+    "sense_s": 42.7,
+    "brain_s": 29.7,
+    "body_s": 308.8
+  },
+  "video_playback_speed": 0.25,
+  "video_fps": 25,
+  "video_frame_dt_ms": 10.0,
+  "n_frames": 1000,
+  "spike_files": {
+    "spikes.parquet": 2.64
+  },
+  "first_taste_ms": 960.0,
+  "max_mn9_hz": 109.86070251464844
+}

@@ -12,7 +12,7 @@ Built in phases. Each phase is finished, tested and committed before the next.
 | 1 | Setup: software + connectome download | done |
 | 2 | Brain only, 1 s simulated | done |
 | 3 | Body in arena, senses → brain → legs | done |
-| 4 | Record every spike (parquet) | – |
+| 4 | Record every spike (parquet) | done |
 | 5 | Neuron map (HTML + PNG) | – |
 | 6 | Video: fly + brain side by side | – |
 
@@ -27,6 +27,7 @@ bash scripts/setup.sh                 # Phase 1: venv + downloads (~2 min)
 .venv/bin/python src/phase2_brain_only.py --trials 5 --brian2   # Phase 2 (~2 min; drop --brian2 for ~15 s)
 MUJOCO_GL=egl .venv/bin/python src/closed_loop.py --seconds 3 --name demo_heading-10      # Phase 3 (~3 min)
 MUJOCO_GL=egl .venv/bin/python src/closed_loop.py --seconds 1.5 --spawn 3.6 2.6 0 --name taste_test
+MUJOCO_GL=egl .venv/bin/python src/phase4_record.py --seconds 10                         # Phase 4 main run (~7 min)
 ```
 Headless rendering needs EGL: `apt-get install libegl1 libgl1-mesa-dri libosmesa6 ffmpeg`.
 
@@ -38,6 +39,7 @@ src/brain.py            fast numba spiking engine (Shiu et al. model, steppable)
 src/phase2_brain_only.py  1 s brain-only test + Brian2 comparison
 src/sensors.py          senses -> sensory neuron IDs (smell, taste, vision, touch)
 src/closed_loop.py      arena + body + brain loop + motor decoder
+src/phase4_record.py    main 10 s closed-loop run, saves every spike
 src/prepare_data.py     merges the tables -> data/work/neurons.parquet + connectome.npz
 data/raw/, data/work/   downloaded / generated data (git-ignored, see "Big files")
 outputs/                small results that ARE committed
@@ -177,6 +179,35 @@ playing the role of the ventral nerve cord; it takes a left and a right drive):
    turning/backing up. This is how the brain-only model behaves (no visual motion →
    steering pathway emerges with these LIF parameters); no hand-made reflex was added.
 4. ❌ MuJoCo EGL/OSMesa libraries were missing in the container → installed with apt.
+
+### Phase 4 – Recording every neuron (2026-11-02)
+
+Main run: 10 simulated seconds, seed 0, default arena and start pose (−3, −2, heading −10°),
+with smell, taste, vision and touch on. Took **6.7 min** (body 309 s, senses 43 s, brain 30 s),
+well under the 1-hour budget, so the duration was not shortened.
+
+| File (`outputs/phase4/`) | Content | Size |
+|---|---|---|
+| `spikes.parquet` | **every spike**: `neuron_idx`, `root_id` (FlyWire ID), `t_ms`; sorted by neuron then time; zstd | 2.6 MB |
+| `neurons.parquet` | all 138,639 neurons + `spike_count`, `rate_hz` for this run | 3.0 MB |
+| `behaviour.csv` | every 5 ms: position, heading, odor L/R, taste, touch, DN rates, MN9, drive | 0.2 MB |
+| `video/topcam.mp4`, `video/nmf_trackcam.mp4` | raw body videos (0.25× speed, 1 frame per 10 ms) | 5.3 MB |
+| `run_info.json`, `console.log` | settings, timings, summary | – |
+
+Results: **1,033,833 spikes**; 11,281 neurons (8.1 %) fired at least once; mean 0.75 Hz over
+the whole brain. The fly walked up the odor gradient, its mouth reached the sugar at
+**0.96 s**, MN9 rose to 35–110 Hz and it stopped to feed for the rest of the run (small
+shuffle at ~8.3 s).
+
+Read the spikes back:
+```python
+import pandas as pd
+spk = pd.read_parquet("outputs/phase4/spikes.parquet")
+spk[spk.root_id == 720575940660219265].t_ms   # MN9 spike times (ms)
+```
+The script re-reads the file after writing and checks the spike count matches (✅).
+If a future longer run makes the file >80 MB, it is automatically split into
+`spikes_partNN.parquet` files (same columns).
 
 ## Big files (never committed)
 - `Connectivity_783.parquet` is 100 MB and `connectome.npz` is 51 MB → both live in the
