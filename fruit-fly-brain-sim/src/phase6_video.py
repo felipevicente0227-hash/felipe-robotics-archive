@@ -38,6 +38,8 @@ def main():
     OUT.mkdir(parents=True, exist_ok=True)
     info = json.loads((P4 / "run_info.json").read_text())
     neurons = pd.read_parquet(P4 / "neurons.parquet")
+    # same rule as prepare_data.py: unassigned visual neurons (photoreceptors) -> optic lobe
+    neurons.loc[(neurons.region == "Unassigned") & (neurons.cell_class == "visual"), "region"] = "Optic lobe"
     spikes = pd.concat([pd.read_parquet(p) for p in sorted(P4.glob("spikes*.parquet"))])
     beh = pd.read_csv(P4 / "behaviour.csv")
     top = imageio.mimread(P4 / "video" / "topcam.mp4", memtest=False)
@@ -76,7 +78,7 @@ def main():
     trace = np.zeros(len(neurons), np.float32)
     f_big, f_med, f_small = font(22), font(16), font(13)
     writer = imageio.get_writer(OUT / "fly_brain_side_by_side.mp4", fps=info["video_fps"],
-                                codec="libx264", quality=7, macro_block_size=8)
+                                codec="libx264", quality=7, macro_block_size=1)
     H_left = top[0].shape[0] + trk[0].shape[0]
     W_total = top[0].shape[1] + BW
     beh_t = beh.t_ms.to_numpy()

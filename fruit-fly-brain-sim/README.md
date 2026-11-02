@@ -14,7 +14,7 @@ Built in phases. Each phase is finished, tested and committed before the next.
 | 3 | Body in arena, senses → brain → legs | done |
 | 4 | Record every spike (parquet) | done |
 | 5 | Neuron map (HTML + PNG) | done |
-| 6 | Video: fly + brain side by side | – |
+| 6 | Video: fly + brain side by side | done |
 
 ---
 
@@ -29,7 +29,9 @@ MUJOCO_GL=egl .venv/bin/python src/closed_loop.py --seconds 3 --name demo_headin
 MUJOCO_GL=egl .venv/bin/python src/closed_loop.py --seconds 1.5 --spawn 3.6 2.6 0 --name taste_test
 MUJOCO_GL=egl .venv/bin/python src/phase4_record.py --seconds 10                         # Phase 4 main run (~7 min)
 .venv/bin/python src/phase5_map.py                                                       # Phase 5 (~15 s)
+.venv/bin/python src/phase6_video.py                                                     # Phase 6 (~45 s)
 ```
+Total time to rerun everything from scratch: ~15 min on 4 CPU cores.
 Headless rendering needs EGL: `apt-get install libegl1 libgl1-mesa-dri libosmesa6 ffmpeg`.
 
 ## Folder layout
@@ -42,6 +44,7 @@ src/sensors.py          senses -> sensory neuron IDs (smell, taste, vision, touc
 src/closed_loop.py      arena + body + brain loop + motor decoder
 src/phase4_record.py    main 10 s closed-loop run, saves every spike
 src/phase5_map.py       neuron map (HTML + PNG)
+src/phase6_video.py     side-by-side MP4
 src/prepare_data.py     merges the tables -> data/work/neurons.parquet + connectome.npz
 data/raw/, data/work/   downloaded / generated data (git-ignored, see "Big files")
 outputs/                small results that ARE committed
@@ -237,6 +240,42 @@ Notes
   compact lookup table + a small JS tooltip → 20 MB (4.8 MB of it is plotly.js itself).
 - Treemap PNG is a screenshot taken with the pre-installed Chromium via Node Playwright.
 - Checked in headless Chromium: 3 plots render, no JS errors, tooltips show.
+
+### Phase 6 – Video (2026-11-02)
+
+**`outputs/phase6/fly_brain_side_by_side.mp4`** (40 s long, 1240×850, ~17 MB):
+the 10 s run played at 0.25× speed (1 frame = 10 ms of simulated time).
+
+- **Left:** top camera on the whole arena + tracking camera on the fly; under them the
+  live readouts – odor at each antenna, taste on/off, MN9 rate, left/right walking drive.
+  Taste and MN9 turn yellow while the fly feeds.
+- **Right:** all 138,639 neurons at their real positions (front view of the brain, grey
+  silhouette); a neuron flashes when it spikes and fades over 20 ms. Below: the fraction
+  of each brain region's neurons active in the last ~20 ms.
+
+Built from the phase 4 spike file + body videos, so the brain picture is exactly the
+recorded activity. Brain frames are drawn directly with numpy (one pixel per neuron),
+which renders 1,000 frames in ~45 s.
+
+---
+
+## Summary – what this project does and does not show
+
+**Does:** the full FlyWire v783 brain (138,639 neurons, 15 M connections) runs as a
+spiking network in a closed loop with a physics-simulated fly. Real senses (smell, taste,
+vision, touch) drive the matching sensory neurons. Descending neurons and the feeding
+motor neuron MN9 drive the body. The emergent chain smell → walking → taste → MN9 →
+stop-and-feed works.
+
+**Does not (yet):** robust odor steering, wall avoidance or visually guided turning. These
+pathways do not reach the descending neurons in this simple model (single LIF parameter
+set, no spontaneous activity, no ventral nerve cord connectome). The walking rhythm itself
+comes from FlyGym's CPG controller, not from neurons. The start pose was chosen so the
+path crosses the sugar.
+
+**Ideas for next steps:** add the ventral nerve cord connectome (MANC/BANC) instead of the
+CPG; give neurons spontaneous background activity; tune per-cell-type gains; add
+visual-motion inputs (T4/T5) to steering.
 
 ## Big files (never committed)
 - `Connectivity_783.parquet` is 100 MB and `connectome.npz` is 51 MB → both live in the
