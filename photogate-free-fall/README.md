@@ -1,6 +1,6 @@
 # Arduino Photogate: Measuring g and Diagnosing Systematic Timing Error
 
-**Solo project** — designed, built, coded, and analyzed independently (IB Physics Internal Assessment, 2026). ~3 months of near-daily lab sessions.
+**Solo project** — designed, built, coded, and analyzed independently (IB Physics Internal Assessment, 2026). About two months of near-daily lab sessions, three hours a day.
 
 ## The question
 Not just "measure g" — the investigation used release height as a **diagnostic variable**: if a fixed timing delay exists in the apparatus, it should distort short falls more than long ones. Varying height turns a nuisance error into something measurable.
@@ -63,7 +63,3 @@ See [FOLLOWUP.md](FOLLOWUP.md): applying the correction flattens the per-height 
 - `FOLLOWUP.md` + `photogate_correction_followup.png` — post-IA correction analysis
 - `generate_figure.py` — reproduces the figure from the data
 - Full IA report: added after IB submission (academic integrity)
-
-## TODO
-- [ ] Apparatus photo at top
-- [ ] t vs √x regression graph

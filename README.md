@@ -20,7 +20,7 @@ Robotics and embedded-systems projects, 2020–2026: international competition r
 
 ##  Flagship: [Arduino Photogate — Measuring g and Diagnosing Systematic Timing Error (2026)](photogate-free-fall/)
 
-**Fully solo project** (IB Physics Internal Assessment): designed, built, coded, and analyzed over ~3 months of near-daily lab sessions.
+**Fully solo project** (IB Physics Internal Assessment): designed, built, coded, and analyzed over about two months of near-daily lab sessions, three hours a day.
 
 A servo-release + LDR photogate free-fall rig, timed by an Arduino at microsecond resolution. Rather than a single measurement, the investigation used release height (20–100 cm, 9 heights × 5 trials) as a **diagnostic variable** to expose a systematic timing error.
 
@@ -59,7 +59,7 @@ Wildfire detection and alert system: camera-based fire detection triggering auto
 ##  Competition Robots (2020–2023)
 
 ### [Korea RoboSTEAM 2021 — Autonomous Patient Transfer Robot (1st place)](2021%20Korea%20Champion%20-%20Autonomous%20Patient%20Transfer%20Robot/)
-Line-following robot that locates colored blocks (representing patients) and delivers each to its matching zone.
+Line tracing robot that locates colored blocks (representing patients) and delivers each to its matching zone.
 **My role:** Largely solo — pandemic restrictions meant near-daily individual lab sessions. I built the robot and wrote the tracing code, including escape functions for recovery and route strategy optimized for time-based scoring. The hardest part was tuning: the robot doesn't learn, so behavior was refined through repeated simulated runs and threshold iteration.
 
 ### [URC Australia, September 2023 — Mechanical Crank System (1st place)](2023%20Australia%20Champion%20-%20Mechanical%20Crank%20System/)
