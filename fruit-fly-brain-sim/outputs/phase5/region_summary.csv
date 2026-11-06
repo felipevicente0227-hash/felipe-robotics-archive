@@ -1,0 +1,16 @@
+region,neurons,active,mean_rate_hz,max_rate_hz
+Optic lobe,93200,9052,0.453,31.300
+Ventrolateral neuropils,8088,55,0.055,51.300
+Superior neuropils,6952,251,1.022,195.500
+Gnathal ganglion (SEZ),5217,396,1.810,129.400
+Mushroom body,5170,374,0.827,81.100
+Ventromedial neuropils,3498,137,0.807,219.800
+Antennal lobe,2980,308,5.563,195.700
+Central complex,2741,92,0.110,72.100
+Lateral horn,2390,269,3.334,128.900
+Periesophageal neuropils,2383,38,0.197,53.300
+Inferior neuropils,2287,206,3.144,165.100
+Optic tubercle,1071,2,0.168,147.200
+Lateral complex,1008,101,4.351,177.900
+Ocellar ganglion,272,0,0.000,0.000
+Unassigned,1382,0,0.000,0.000
